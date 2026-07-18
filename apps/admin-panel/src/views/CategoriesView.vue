@@ -147,9 +147,10 @@ async function uploadFile() {
   try {
     const formData = new FormData();
     formData.append("file", fileToUpload.value[0]);
-    await api.post(`/api/categories/${fileTargetCategory.value.id}/file`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    // Don't set Content-Type manually — axios/the browser must generate it
+    // itself so it includes the multipart boundary, or @fastify/multipart
+    // can't parse the body and req.file() comes back undefined (400).
+    await api.post(`/api/categories/${fileTargetCategory.value.id}/file`, formData);
     fileDialog.value = false;
     await fetchCategories();
   } finally {

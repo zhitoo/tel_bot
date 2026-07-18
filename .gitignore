@@ -5,3 +5,4 @@ dist/
 apps/bot-server/uploads/*
 !apps/bot-server/uploads/.gitkeep
 *.log
+*.tsbuildinfo
