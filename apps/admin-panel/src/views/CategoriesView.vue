@@ -89,7 +89,10 @@ const form = ref({ title: "", sortOrder: 0 });
 
 const fileDialog = ref(false);
 const fileTargetCategory = ref<Category | null>(null);
-const fileToUpload = ref<File[]>([]);
+// v-file-input without `multiple` emits a bare File (not File[]) on
+// update:modelValue — see VFileInput's useProxiedModel transformOut, which
+// unwraps to val[0] when !props.multiple.
+const fileToUpload = ref<File | null>(null);
 const uploading = ref(false);
 
 async function fetchCategories() {
@@ -137,16 +140,16 @@ async function removeCategory(cat: Category) {
 
 function openFileDialog(cat: Category) {
   fileTargetCategory.value = cat;
-  fileToUpload.value = [];
+  fileToUpload.value = null;
   fileDialog.value = true;
 }
 
 async function uploadFile() {
-  if (!fileTargetCategory.value || fileToUpload.value.length === 0) return;
+  if (!fileTargetCategory.value || !fileToUpload.value) return;
   uploading.value = true;
   try {
     const formData = new FormData();
-    formData.append("file", fileToUpload.value[0]);
+    formData.append("file", fileToUpload.value);
     // Don't set Content-Type manually — axios/the browser must generate it
     // itself so it includes the multipart boundary, or @fastify/multipart
     // can't parse the body and req.file() comes back undefined (400).
