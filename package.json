@@ -1,0 +1,17 @@
+{
+  "name": "tel-bot",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=apps/bot-server",
+    "dev:admin": "npm run dev --workspace=apps/admin-panel",
+    "build:server": "npm run build --workspace=apps/bot-server",
+    "build:admin": "npm run build --workspace=apps/admin-panel",
+    "prisma:generate": "npm run prisma:generate --workspace=apps/bot-server",
+    "prisma:migrate": "npm run prisma:migrate --workspace=apps/bot-server",
+    "prisma:seed": "npm run prisma:seed --workspace=apps/bot-server"
+  }
+}

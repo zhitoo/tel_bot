@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tel_bot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-tel_bot}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tel_bot}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  bot-server:
+    build:
+      context: .
+      dockerfile: apps/bot-server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tel_bot}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-tel_bot}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:?TOKEN_ENCRYPTION_KEY is required}
+      ADMIN_PANEL_ORIGIN: ${ADMIN_PANEL_ORIGIN:-http://localhost:8080}
+      UPLOAD_DIR: /app/apps/bot-server/uploads
+      PORT: 3000
+      ADMIN_DEFAULT_USERNAME: ${ADMIN_DEFAULT_USERNAME:-admin}
+      ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD:?ADMIN_DEFAULT_PASSWORD is required}
+    volumes:
+      - bot_uploads:/app/apps/bot-server/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  admin-panel:
+    build:
+      context: .
+      dockerfile: apps/admin-panel/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - bot-server
+    ports:
+      - "${ADMIN_PANEL_PORT:-8080}:80"
+
+volumes:
+  postgres_data:
+  bot_uploads:

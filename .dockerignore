@@ -1,0 +1,7 @@
+**/node_modules
+**/dist
+apps/bot-server/uploads
+**/.env
+**/.env.local
+**/*.log
+.git

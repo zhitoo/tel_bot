@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("admins")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  title     String
+  fileId    String?  @map("file_id")
+  file      File?    @relation(fields: [fileId], references: [id])
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  users     User[]
+
+  @@map("categories")
+}
+
+model File {
+  id               String     @id @default(uuid())
+  originalName     String     @map("original_name")
+  storagePath      String     @map("storage_path")
+  telegramFileId   String?    @map("telegram_file_id")
+  uploadedAt       DateTime   @default(now()) @map("uploaded_at")
+  categories       Category[]
+
+  @@map("files")
+}
+
+enum MobileSource {
+  manual
+  telegram_contact
+}
+
+model User {
+  id               String       @id @default(uuid())
+  telegramUserId   BigInt       @unique @map("telegram_user_id")
+  telegramUsername String?      @map("telegram_username")
+  firstName        String       @map("first_name")
+  lastName         String       @map("last_name")
+  mobile           String
+  mobileSource     MobileSource @map("mobile_source")
+  categoryId       String?      @map("category_id")
+  category         Category?    @relation(fields: [categoryId], references: [id])
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+/// Key-value store for runtime bot settings (is_active flag, encrypted bot_token, etc.)
+model BotSetting {
+  key   String @id
+  value String
+
+  @@map("bot_settings")
+}
+
+/// Persists in-progress conversation state per telegram user so restarts don't lose the FSM step.
+model BotSession {
+  telegramUserId BigInt   @id @map("telegram_user_id")
+  step           String
+  data           Json     @default("{}")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("bot_sessions")
+}
