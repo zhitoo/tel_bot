@@ -2,6 +2,7 @@
 #   docker build -f apps/bot-server/Dockerfile -t tel-bot-server .
 
 FROM node:20-alpine AS base
+RUN apk add --no-cache openssl
 WORKDIR /app
 
 # ---- deps: install full workspace (dev deps included, needed to compile) ----
@@ -21,7 +22,7 @@ RUN npm prune --omit=dev
 # ---- runner: minimal production image ----
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
-RUN addgroup -S app && adduser -S app -G app
+RUN apk add --no-cache openssl && addgroup -S app && adduser -S app -G app
 WORKDIR /app/apps/bot-server
 
 COPY --from=build /app/node_modules /app/node_modules
