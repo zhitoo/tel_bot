@@ -41,10 +41,17 @@ async function launchBot(token: string): Promise<void> {
   currentBot = bot;
 
   if (PUBLIC_URL) {
-    await bot.telegram.setWebhook(`${PUBLIC_URL}${WEBHOOK_PATH}`, {
-      secret_token: WEBHOOK_SECRET || undefined,
-    });
-    console.log(`[botManager] Telegram webhook set to ${PUBLIC_URL}${WEBHOOK_PATH}`);
+    // Only the primary replica (INSTANCE_INDEX=0) registers the webhook.
+    // All replicas handle incoming webhook POSTs — no leader election needed.
+    const isPrimary = (process.env.INSTANCE_INDEX ?? "0") === "0";
+    if (isPrimary) {
+      await bot.telegram.setWebhook(`${PUBLIC_URL}${WEBHOOK_PATH}`, {
+        secret_token: WEBHOOK_SECRET || undefined,
+      });
+      console.log(`[botManager] Telegram webhook set to ${PUBLIC_URL}${WEBHOOK_PATH}`);
+    } else {
+      console.log(`[botManager] Replica — webhook already set by primary, skipping setWebhook.`);
+    }
   } else {
     // ponytail: polling fallback for local dev without a public URL — single instance only.
     bot.launch();
