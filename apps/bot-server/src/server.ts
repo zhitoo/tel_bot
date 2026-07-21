@@ -7,7 +7,7 @@ import authRoutes from "./routes/auth.js";
 import categoriesRoutes from "./routes/categories.js";
 import usersRoutes from "./routes/users.js";
 import settingsRoutes from "./routes/settings.js";
-import { handleWebhookUpdate, startBot, WEBHOOK_PATH } from "./lib/botManager.js";
+import { startBot } from "./lib/botManager.js";
 
 const app = Fastify({ logger: true });
 
@@ -21,12 +21,6 @@ await app.register(usersRoutes);
 await app.register(settingsRoutes);
 
 app.get("/api/health", async () => ({ ok: true }));
-
-app.post(WEBHOOK_PATH, async (req, reply) => {
-  const result = await handleWebhookUpdate(req.body, req.headers["x-telegram-bot-api-secret-token"] as string | undefined);
-  if (result === "forbidden") return reply.code(403).send();
-  return reply.code(200).send();
-});
 
 const port = Number(process.env.PORT ?? 3000);
 
